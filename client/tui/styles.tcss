@@ -1,0 +1,240 @@
+/* ELYTH TUI Stylesheet */
+
+Screen {
+    background: #0f141c;
+    color: #abb2bf;
+}
+
+/* ヘッダー */
+ElythHeader {
+    dock: top;
+    height: 3;
+    background: #161b22;
+    color: #00c8d4;
+    border-bottom: double #00c8d4;
+    content-align: center middle;
+    text-style: bold;
+}
+
+#header-title {
+    color: #ec4899;
+    text-style: bold;
+}
+
+#header-stats {
+    color: #abb2bf;
+    margin-left: 2;
+}
+
+/* フッター */
+Footer {
+    background: #161b22;
+    color: #5c6370;
+}
+
+Footer > .footer--highlight {
+    background: #00c8d4;
+    color: #0f141c;
+    text-style: bold;
+}
+
+Footer > .footer--key {
+    color: #ec4899;
+}
+
+/* メインレイアウト */
+TabbedContent {
+    background: transparent;
+    margin: 1 2;
+}
+
+TabbedContent Tabs {
+    background: #161b22;
+    border: none;
+}
+
+TabbedContent Tab {
+    color: #abb2bf;
+    text-style: bold;
+}
+
+TabbedContent Tab:hover {
+    background: #21262d;
+    color: #00c8d4;
+}
+
+TabbedContent Tab.--active {
+    background: #00c8d4;
+    color: #0f141c;
+    text-style: bold;
+}
+
+/* スクリプトビュー */
+.scroll-container {
+    height: 1fr;
+    overflow-y: scroll;
+    scrollbar-color: #00c8d4 #161b22;
+    scrollbar-size: 1 1;
+}
+
+/* 投稿カード */
+PostCard {
+    background: #161b22;
+    border: round #30363d;
+    margin: 1 0;
+    padding: 1 2;
+    height: auto;
+}
+
+PostCard:focus {
+    border: round #00c8d4;
+    background: #1f242c;
+}
+
+PostCard:hover {
+    border: round #ec4899;
+}
+
+.post-header {
+    height: 1;
+    color: #8b949e;
+}
+
+.post-author-name {
+    color: #ffffff;
+    text-style: bold;
+}
+
+.post-author-handle {
+    color: #00c8d4;
+}
+
+.post-time {
+    color: #8b949e;
+    align: right top;
+}
+
+.post-content {
+    margin: 1 0;
+    color: #c9d1d9;
+    height: auto;
+}
+
+.post-actions {
+    height: 3;
+    align: left middle;
+    margin-top: 1;
+}
+
+.action-btn {
+    margin-right: 2;
+    background: #21262d;
+    color: #abb2bf;
+    border: none;
+    height: 1;
+}
+
+.action-btn:hover {
+    background: #30363d;
+    color: #ffffff;
+}
+
+.like-btn {
+    color: #ff6b6b;
+}
+
+.like-btn.liked {
+    background: #ff6b6b;
+    color: #ffffff;
+    text-style: bold;
+}
+
+.reply-btn {
+    color: #4dadf7;
+}
+
+.thread-btn {
+    color: #fcc419;
+}
+
+/* スレッド表示 */
+ThreadView {
+    background: #0f141c;
+    border: double #00c8d4;
+    margin: 1 2;
+    padding: 1 2;
+}
+
+.thread-back-btn {
+    margin-bottom: 1;
+    background: #21262d;
+    color: #00c8d4;
+    border: none;
+    height: 1;
+}
+
+.thread-back-btn:hover {
+    background: #30363d;
+    color: #ffffff;
+}
+
+.thread-tree {
+    height: 1fr;
+    overflow-y: scroll;
+}
+
+/* ダイアログ/モーダル */
+ModalScreen {
+    align: center middle;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+#modal-container {
+    width: 60;
+    height: auto;
+    background: #161b22;
+    border: round #00c8d4;
+    padding: 1 2;
+}
+
+#modal-title {
+    color: #00c8d4;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+#modal-input {
+    margin-bottom: 1;
+    border: round #30363d;
+    background: #0f141c;
+    color: #ffffff;
+}
+
+#modal-input:focus {
+    border: round #ec4899;
+}
+
+#modal-footer {
+    height: 3;
+    align: right middle;
+}
+
+.modal-btn {
+    margin-left: 2;
+}
+
+.modal-submit-btn {
+    background: #00c8d4;
+    color: #0f141c;
+    text-style: bold;
+}
+
+.modal-cancel-btn {
+    background: #21262d;
+    color: #abb2bf;
+}
+
+#char-counter {
+    color: #8b949e;
+    margin-top: 1;
+}
