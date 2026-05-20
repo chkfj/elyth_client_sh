@@ -61,25 +61,27 @@ class TestElythMockDatabase(unittest.TestCase):
 
 class TestElythApiClient(unittest.TestCase):
     def setUp(self):
-        # 常に安全なモックモードで初期化
+        # テスト用モックモードクライアント
         self.client_mock = ElythApiClient(mock_mode=True)
-        # 本番モード（APIキーありを想定）
-        self.client_prod = ElythApiClient(mock_mode=False, api_key="elyth_test_key")
+        # 本番モードクライアント (書き込み許可モード - デフォルト)
+        self.client_prod_write_allowed = ElythApiClient(mock_mode=False, api_key="elyth_test_key")
+        # 本番モードクライアント (書き込み禁止モード)
+        self.client_prod_write_blocked = ElythApiClient(mock_mode=False, readonly_mode=True, api_key="elyth_test_key")
 
     def test_production_guard(self):
-        # 本番モードでの更新操作が例外をスローすることを確認（安全ガードのテスト）
+        # 本番モードでの書き込み禁止モードでは更新操作が例外をスローすることを確認（安全ガードのテスト）
         async def run_guard_checks():
             with self.assertRaises(OperationNotAllowedInProduction):
-                await self.client_prod.create_post("Should fail")
+                await self.client_prod_write_blocked.create_post("Should fail")
                 
             with self.assertRaises(OperationNotAllowedInProduction):
-                await self.client_prod.create_reply("Should fail", "some-uuid")
+                await self.client_prod_write_blocked.create_reply("Should fail", "some-uuid")
                 
             with self.assertRaises(OperationNotAllowedInProduction):
-                await self.client_prod.like_post("some-uuid")
+                await self.client_prod_write_blocked.like_post("some-uuid")
                 
             with self.assertRaises(OperationNotAllowedInProduction):
-                await self.client_prod.unlike_post("some-uuid")
+                await self.client_prod_write_blocked.unlike_post("some-uuid")
         
         asyncio.run(run_guard_checks())
 
@@ -89,14 +91,40 @@ class TestElythApiClient(unittest.TestCase):
             res = await self.client_mock.create_post("Should succeed in mock")
             self.assertTrue(res["success"])
             self.assertEqual(res["post"]["content"], "Should succeed in mock")
-            
+             
         asyncio.run(run_mock_check())
+
+    def test_production_write_allowed(self):
+        # 本番モードでの書き込み許可モード（デフォルト）では更新操作が成功することを確認
+        # 注意: 実際のAPIキーがないため、ここでのテストは認証エラーになることを期待
+        # しかし、以前のテストではOperationNotAllowedInProductionを期待していたため、
+        # 今回は例外の種類が変わることを確認する（OperationNotAllowedInProduction以外の例外）
+        async def run_write_allowed_checks():
+            # 書き込み許可モードではOperationNotAllowedInProduction以外の例外（認証エラーなど）になることを期待
+            with self.assertRaises(Exception) as cm:
+                await self.client_prod_write_allowed.create_post("Should be allowed but auth fails")
+            self.assertNotIsInstance(cm.exception, OperationNotAllowedInProduction)
+                
+            with self.assertRaises(Exception) as cm:
+                await self.client_prod_write_allowed.create_reply("Should be allowed but auth fails", "some-uuid")
+            self.assertNotIsInstance(cm.exception, OperationNotAllowedInProduction)
+                
+            with self.assertRaises(Exception) as cm:
+                await self.client_prod_write_allowed.like_post("some-uuid")
+            self.assertNotIsInstance(cm.exception, OperationNotAllowedInProduction)
+                
+            with self.assertRaises(Exception) as cm:
+                await self.client_prod_write_allowed.unlike_post("some-uuid")
+            self.assertNotIsInstance(cm.exception, OperationNotAllowedInProduction)
+        
+        asyncio.run(run_write_allowed_checks())
 
     def tearDown(self):
         async def close_clients():
             await self.client_mock.close()
-            await self.client_prod.close()
-            
+            await self.client_prod_write_allowed.close()
+            await self.client_prod_write_blocked.close()
+             
         asyncio.run(close_clients())
 
 

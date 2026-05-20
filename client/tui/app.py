@@ -19,10 +19,11 @@ class ElythApp(App):
         ("r", "refresh_all", "再読み込み"),
     ]
 
-    def __init__(self, mock_mode=False, **kwargs):
+    def __init__(self, mock_mode=False, readonly_mode=False, **kwargs):
         super().__init__(**kwargs)
         self.mock_mode = mock_mode
-        self.api = ElythApiClient(mock_mode=self.mock_mode)
+        self.readonly_mode = readonly_mode
+        self.api = ElythApiClient(mock_mode=self.mock_mode, readonly_mode=self.readonly_mode)
         self.current_thread_id = None
 
     def compose(self) -> ComposeResult:

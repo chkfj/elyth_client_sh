@@ -7,8 +7,9 @@ class OperationNotAllowedInProduction(Exception):
     pass
 
 class ElythApiClient:
-    def __init__(self, mock_mode=False, api_key=None, base_url="https://elythworld.com"):
+    def __init__(self, mock_mode=False, readonly_mode=False, api_key=None, base_url="https://elythworld.com"):
         self.mock_mode = mock_mode
+        self.readonly_mode = readonly_mode
         self.base_url = base_url.rstrip("/")
         
         # APIキーの取得
@@ -101,9 +102,16 @@ class ElythApiClient:
             p = self.mock_db.create_post(content)
             return {"success": True, "post": p}
             
-        raise OperationNotAllowedInProduction(
-            "安全のため、本番接続での新規投稿（更新操作）は禁止されています。モックモードでテストしてください。"
-        )
+        if self.readonly_mode:
+            raise OperationNotAllowedInProduction(
+                "安全のため、本番接続での新規投稿（更新操作）は禁止されています。--read-only モードを解除してください。"
+            )
+            
+        # 本番APIへの実際のリクエスト
+        url = "/api/mcp/posts"
+        response = await self.client.post(url, json={"content": content})
+        response.raise_for_status()
+        return response.json()
 
     async def create_reply(self, content, reply_to_id):
         """投稿への返信を作成"""
@@ -111,9 +119,16 @@ class ElythApiClient:
             r = self.mock_db.create_reply(content, reply_to_id)
             return {"success": True, "post": r}
             
-        raise OperationNotAllowedInProduction(
-            "安全のため、本番接続での返信投稿（更新操作）は禁止されています。モックモードでテストしてください。"
-        )
+        if self.readonly_mode:
+            raise OperationNotAllowedInProduction(
+                "安全のため、本番接続での返信投稿（更新操作）は禁止されています。--read_only モードを解除してください。"
+            )
+            
+        # 本番APIへの実際のリクエスト
+        url = "/api/mcp/posts"
+        response = await self.client.post(url, json={"content": content, "reply_to_id": reply_to_id})
+        response.raise_for_status()
+        return response.json()
 
     async def like_post(self, post_id):
         """投稿にいいねをする"""
@@ -121,9 +136,16 @@ class ElythApiClient:
             p = self.mock_db.like_post(post_id)
             return {"success": True, "data": {"liked": True}}
             
-        raise OperationNotAllowedInProduction(
-            "安全のため、本番接続でのいいね（更新操作）は禁止されています。モックモードでテストしてください。"
-        )
+        if self.readonly_mode:
+            raise OperationNotAllowedInProduction(
+                "安全のため、本番接続でのいいね（更新操作）は禁止されています。--read-only モードを解除してください。"
+            )
+            
+        # 本番APIへの実際のリクエスト
+        url = f"/api/mcp/posts/{post_id}/like"
+        response = await self.client.post(url)
+        response.raise_for_status()
+        return response.json()
 
     async def unlike_post(self, post_id):
         """投稿のいいねを解除する"""
@@ -131,6 +153,13 @@ class ElythApiClient:
             p = self.mock_db.unlike_post(post_id)
             return {"success": True, "data": {"liked": False}}
             
-        raise OperationNotAllowedInProduction(
-            "安全のため、本番接続でのいいね解除（更新操作）は禁止されています。モックモードでテストしてください。"
-        )
+        if self.readonly_mode:
+            raise OperationNotAllowedInProduction(
+                "安全のため、本番接続でのいいね解除（更新操作）は禁止されています。--read-only モードを解除してください。"
+            )
+            
+        # 本番APIへの実際のリクエスト
+        url = f"/api/mcp/posts/{post_id}/like"
+        response = await self.client.delete(url)
+        response.raise_for_status()
+        return response.json()
