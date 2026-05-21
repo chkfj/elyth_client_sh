@@ -124,8 +124,15 @@ class TestElythApiClient(unittest.TestCase):
             await self.client_mock.close()
             await self.client_prod_write_allowed.close()
             await self.client_prod_write_blocked.close()
-             
-        asyncio.run(close_clients())
+         
+        # Handle case where event loop might be closed from previous asyncio.run() calls
+        try:
+            asyncio.run(close_clients())
+        except RuntimeError as e:
+            if "Event loop is closed" not in str(e):
+                raise
+            # If loop is closed, we can't close the clients, but that's okay for test cleanup
+            pass
 
 
 class TestThreadTreeDFS(unittest.TestCase):
