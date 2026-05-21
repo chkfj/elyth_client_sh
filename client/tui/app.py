@@ -131,43 +131,135 @@ class ElythApp(App):
         """タイムラインタブの中身を更新"""
         container = self.query_one("#timeline-container", ScrollableContainer)
         
-        # 既存ウィジェットの削除
-        for child in container.walk_children():
-            await child.remove()
-
+        # 現在のスクロール位置を保存（y座標のみ）
+        try:
+            current_scroll_y = container.scroll_y
+        except AttributeError:
+            # scroll_y プロパティが存在しない場合は0とする
+            current_scroll_y = 0
+        
         try:
             res = await self.api.get_information(include=["timeline"], timeline_limit=20)
-            timeline = res.get("timeline", [])
+            new_timeline = res.get("timeline", [])
             
-            if not timeline:
+            if not new_timeline:
+                # タイムラインが空の場合は従来通り全削除してメッセージ表示
+                for child in container.walk_children():
+                    await child.remove()
                 await container.mount(Static("[grey]タイムラインに投稿がありません。[/]"))
+                # スクロール位置を復元しようとするが、エラーなら無視
+                try:
+                    container.scroll_to(y=current_scroll_y, animate=False)
+                except Exception:
+                    pass
                 return
-
-            for post in timeline:
+            
+            # 既存のPostCardウィジェットを投稿IDでマッピング
+            existing_cards = {
+                card.post["id"]: card 
+                for card in container.walk_children(PostCard)
+            }
+            
+            # 新しいデータに基づいてウィジェットを更新・追加・削除
+            new_card_ids = {post["id"] for post in new_timeline}
+            existing_card_ids = set(existing_cards.keys())
+            
+            # 削除が必要なウィジェット (新しいデータに存在しないもの)
+            to_remove = existing_card_ids - new_card_ids
+            for post_id in to_remove:
+                await existing_cards[post_id].remove()
+            
+            # すべての既存ウィジェットを一旦削除
+            for child in list(container.walk_children()):
+                await child.remove()
+                
+            # 新しいデータ順序でウィジェットを作成・マウント
+            for post in new_timeline:
                 await container.mount(PostCard(post, self.api))
+            
+            # スクロール位置を復元しようとするが、エラーなら無視
+            try:
+                container.scroll_to(y=current_scroll_y, animate=False)
+            except Exception:
+                pass
+                
         except Exception as e:
+            # エラー時は従来通りの表示
+            for child in container.walk_children():
+                await child.remove()
             await container.mount(Static(f"[bold #ff6b6b]タイムライン取得エラー: {e}[/]"))
+            # エラー時もスクロール位置を復元しようとするが、エラーなら無視
+            try:
+                container.scroll_to(y=current_scroll_y, animate=False)
+            except Exception:
+                pass
 
     async def refresh_my_posts(self) -> None:
         """マイ投稿タブの中身を更新"""
         container = self.query_one("#my-posts-container", ScrollableContainer)
         
-        # 既存ウィジェットの削除
-        for child in container.walk_children():
-            await child.remove()
-
+        # 現在のスクロール位置を保存（y座標のみ）
+        try:
+            current_scroll_y = container.scroll_y
+        except AttributeError:
+            # scroll_y プロパティが存在しない場合は0とする
+            current_scroll_y = 0
+        
         try:
             res = await self.api.get_my_posts(limit=20)
-            posts = res.get("posts", [])
+            new_posts = res.get("posts", [])
             
-            if not posts:
+            if not new_posts:
+                # 投稿が空の場合は従来通り全削除してメッセージ表示
+                for child in container.walk_children():
+                    await child.remove()
                 await container.mount(Static("[grey]過去の投稿がありません。[/]"))
+                # スクロール位置を復元しようとするが、エラーなら無視
+                try:
+                    container.scroll_to(y=current_scroll_y, animate=False)
+                except Exception:
+                    pass
                 return
-
-            for post in posts:
+            
+            # 既存のPostCardウィジェットを投稿IDでマッピング
+            existing_cards = {
+                card.post["id"]: card 
+                for card in container.walk_children(PostCard)
+            }
+            
+            # 新しいデータに基づいてウィジェットを更新・追加・削除
+            new_post_ids = {post["id"] for post in new_posts}
+            existing_post_ids = set(existing_cards.keys())
+            
+            # 削除が必要なウィジェット (新しいデータに存在しないもの)
+            to_remove = existing_post_ids - new_post_ids
+            for post_id in to_remove:
+                await existing_cards[post_id].remove()
+            
+            # すべての既存ウィジェットを一旦削除
+            for child in list(container.walk_children()):
+                await child.remove()
+                
+            # 新しいデータ順序でウィジェットを作成・マウント
+            for post in new_posts:
                 await container.mount(PostCard(post, self.api))
+            
+            # スクロール位置を復元しようとするが、エラーなら無視
+            try:
+                container.scroll_to(y=current_scroll_y, animate=False)
+            except Exception:
+                pass
+                
         except Exception as e:
+            # エラー時は従来通りの表示
+            for child in container.walk_children():
+                await child.remove()
             await container.mount(Static(f"[bold #ff6b6b]マイ投稿取得エラー: {e}[/]"))
+            # エラー時もスクロール位置を復元しようとするが、エラーなら無視
+            try:
+                container.scroll_to(y=current_scroll_y, animate=False)
+            except Exception:
+                pass
 
     # --- 新規投稿アクション ---
     

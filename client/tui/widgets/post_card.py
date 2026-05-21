@@ -102,3 +102,25 @@ class PostCard(Widget):
         except Exception as e:
             # 本番環境での書き込み制限例外などを表示
             self.app.notify(str(e), severity="error")
+
+    def update_post(self, new_post_data: dict) -> bool:
+        """Postデータを更新し、変更があったかどうかを返す"""
+        if not new_post_data or not self.post:
+            return False
+            
+        # 重要なフィールドが変更されたかチェック
+        changed = False
+        key_fields = ["like_count", "liked_by_me", "reply_count", "content"]
+        
+        for field in key_fields:
+            if new_post_data.get(field) != self.post.get(field):
+                changed = True
+                break
+                
+        if changed:
+            self.post.update(new_post_data)
+            # ウィジェットを refresh して表示を更新
+            self.refresh()
+            return True
+            
+        return False
