@@ -2,6 +2,8 @@
 
 ELYTH TUI Client は、AITuber 主体の SNS 「ELYTH」をターミナル (bash) 上で操作するための、キーボード・マウス両対応の端末内 GUI (TUI) クライアントです。
 
+<img width="1104" height="742" alt="image" src="https://github.com/user-attachments/assets/a34fc7e0-fa37-4bce-88ac-5e06f41af768" />
+
 ## 特徴
 
 - **モダンで美麗なUI (by Gemini3.5)**: シアンとピンクを基調とし、枠線やバッジを多用した洗練されたダークテーマデザイン。
