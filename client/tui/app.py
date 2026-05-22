@@ -4,9 +4,10 @@ from textual.widgets import Header, Footer, TabbedContent, TabPane, Static, Cont
 from textual.containers import Vertical, ScrollableContainer
 from client.tui.widgets.header import ElythHeader
 from client.tui.widgets.post_card import PostCard
-from client.tui.widgets.modal import PostInputModal
+from client.tui.widgets.modal import PostInputModal, SettingsModal
 from client.tui.widgets.thread import ThreadView
 from client.api import ElythApiClient
+from client.settings import load_settings, save_settings
 
 class ElythApp(App):
     """ELYTH TUI クライアントのメインアプリケーション"""
@@ -17,6 +18,7 @@ class ElythApp(App):
         ("q", "quit", "終了"),
         ("n", "new_post", "新規投稿"),
         ("r", "refresh_all", "再読み込み"),
+        ("s", "open_settings", "設定"),
     ]
 
     def __init__(self, mock_mode=False, readonly_mode=False, **kwargs):
@@ -25,6 +27,9 @@ class ElythApp(App):
         self.readonly_mode = readonly_mode
         self.api = ElythApiClient(mock_mode=self.mock_mode, readonly_mode=self.readonly_mode)
         self.current_thread_id = None
+        self.auto_refresh_enabled = True
+        self.auto_refresh_interval = 30
+        self._refresh_timer = None
 
     def compose(self) -> ComposeResult:
         # カスタムヘッダーと標準フッター
@@ -49,6 +54,8 @@ class ElythApp(App):
     def _get_help_text(self) -> str:
         """ヘルプ画面のテキスト"""
         mode_str = "[bold #ff6b6b]MOCK モード[/]" if self.mock_mode else "[bold #00c8d4]本番モード[/]"
+        refresh_status = "[bold #00c8d4]有効[/]" if self.auto_refresh_enabled else "[bold #ff6b6b]無効[/]"
+        refresh_interval = self.auto_refresh_interval
         return (
             f"\n"
             f"  [bold #00c8d4]ELYTH TUI クライアントへようこそ！[/] (現在のモード: {mode_str})\n\n"
@@ -56,6 +63,7 @@ class ElythApp(App):
             f"    * [bold #ffffff]Tab[/]           : タブの切り替え\n"
             f"    * [bold #ffffff]n[/]             : 新規ルート投稿の作成\n"
             f"    * [bold #ffffff]r[/]             : タイムラインとマイ投稿の再読み込み\n"
+            f"    * [bold #ffffff]s[/]             : 設定画面を開く\n"
             f"    * [bold #ffffff]q[/]             : アプリケーションの終了\n\n"
             f"  [bold #ec4899]投稿カード内の操作 (マウス操作対応):[/]\n"
             f"    * [bold #ffffff]Likeボタン[/]    : 投稿に「いいね」します。(※本番モードではモックのみ動作)\n"
@@ -64,7 +72,7 @@ class ElythApp(App):
             f"  [bold #ec4899]スレッド表示内での操作:[/]\n"
             f"    * [bold #ffffff]←ボタン[/]      : タイムライン表示に戻ります。\n"
             f"    * [bold #ffffff]Esc / Backspace[/]: タイムライン表示に戻ります。\n\n"
-            f"  [bold #5c6370]※ 30秒毎にタイムラインとユーザー情報をバックグラウンドで自動取得します。[/]\n"
+            f"  [bold #5c6370]※ 自動更新: {refresh_status} (間隔: {refresh_interval}秒)[/]。設定画面(s)で変更できます。[/]\n"
         )
 
     async def on_mount(self) -> None:
@@ -72,11 +80,31 @@ class ElythApp(App):
         self.title = "ELYTH TUI"
         self.sub_title = "Mock Mode" if self.mock_mode else "Live API Connection"
         
+        # 設定の読み込み
+        settings = load_settings()
+        self.auto_refresh_enabled = settings.get("auto_refresh_enabled", True)
+        self.auto_refresh_interval = settings.get("auto_refresh_interval", 30)
+        
         # 初回データ取得
         await self.action_refresh_all()
         
-        # 30秒ごとに自動更新するタイマーをセット
-        self.set_interval(30.0, self.action_refresh_all)
+        # 自動更新タイマーのセットアップ
+        self._setup_refresh_timer()
+
+    def _setup_refresh_timer(self) -> None:
+        """自動更新タイマーをセットアップ"""
+        # 既存のタイマーをクリア
+        if self._refresh_timer is not None:
+            self._refresh_timer.stop()
+            self._refresh_timer = None
+        
+        # 自動更新が有効な場合のみタイマーをセット
+        if self.auto_refresh_enabled and self.auto_refresh_interval > 0:
+            self._refresh_timer = self.set_interval(
+                self.auto_refresh_interval, 
+                self.action_refresh_all,
+                name="auto_refresh"
+            )
 
     async def action_refresh_all(self) -> None:
         """すべての表示データを最新化する"""
@@ -323,6 +351,28 @@ class ElythApp(App):
         """スレッドビューからタイムラインに戻る"""
         self.query_one("#main-switcher", ContentSwitcher).current = "tabs-view"
         self.current_thread_id = None
+
+    def action_open_settings(self) -> None:
+        """設定画面を開く"""
+        self.push_screen(SettingsModal(self))
+
+    def update_refresh_settings(self, enabled: bool, interval: int) -> None:
+        """自動更新設定を更新"""
+        self.auto_refresh_enabled = enabled
+        self.auto_refresh_interval = interval
+        
+        # 設定を保存
+        settings = load_settings()
+        settings["auto_refresh_enabled"] = enabled
+        settings["auto_refresh_interval"] = interval
+        save_settings(settings)
+        
+        # タイマーを再セットアップ
+        self._setup_refresh_timer()
+        
+        status = "有効" if enabled else "無効"
+        interval_text = f"{interval}秒" if interval > 0 else "無効"
+        self.notify(f"自動更新を {status} に設定しました (間隔: {interval_text})", severity="info")
 
     def on_key(self, event) -> None:
         """キーボードのグローバルバインド"""

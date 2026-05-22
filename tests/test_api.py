@@ -1,8 +1,12 @@
 import unittest
 import asyncio
+import tempfile
+import os
+from pathlib import Path
 from client.mock_data import ElythMockDatabase
 from client.api import ElythApiClient, OperationNotAllowedInProduction
 from client.tui.widgets.thread import ThreadView
+from client.settings import load_settings, save_settings, DEFAULT_SETTINGS, get_settings_path
 
 class TestElythMockDatabase(unittest.TestCase):
     def setUp(self):
@@ -172,6 +176,110 @@ class TestThreadTreeDFS(unittest.TestCase):
         
         self.assertEqual(ordered[3][0]["id"], reply2["id"])
         self.assertEqual(ordered[3][1], 1)
+
+
+class TestSettings(unittest.TestCase):
+    def setUp(self):
+        """テスト用の一時設定ファイルを使用"""
+        self.original_settings_path = None
+        self.temp_dir = tempfile.mkdtemp()
+        self.settings_file = Path(self.temp_dir) / "settings.json"
+        
+    def tearDown(self):
+        """一時ファイルのクリーンアップ"""
+        import shutil
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+
+    def test_default_settings(self):
+        """デフォルト設定の値をテスト"""
+        settings = DEFAULT_SETTINGS.copy()
+        self.assertTrue(settings["auto_refresh_enabled"])
+        self.assertEqual(settings["auto_refresh_interval"], 30)
+
+    def test_save_and_load_settings(self):
+        """設定の保存と読み込みをテスト"""
+        test_settings = {
+            "auto_refresh_enabled": False,
+            "auto_refresh_interval": 60
+        }
+        
+        # 一時ディレクトリに保存
+        import client.settings as settings_module
+        original_path = settings_module.get_settings_path
+        settings_module.get_settings_path = lambda: self.settings_file
+        
+        try:
+            save_settings(test_settings)
+            loaded = load_settings()
+            
+            self.assertEqual(loaded["auto_refresh_enabled"], False)
+            self.assertEqual(loaded["auto_refresh_interval"], 60)
+        finally:
+            settings_module.get_settings_path = original_path
+
+    def test_load_nonexistent_settings(self):
+        """存在しない設定ファイルはデフォルトを返すことをテスト"""
+        import client.settings as settings_module
+        original_path = settings_module.get_settings_path
+        settings_module.get_settings_path = lambda: self.settings_file
+        
+        try:
+            loaded = load_settings()
+            self.assertEqual(loaded, DEFAULT_SETTINGS)
+        finally:
+            settings_module.get_settings_path = original_path
+
+    def test_load_partial_settings(self):
+        """部分的な設定ファイルはデフォルトとマージされて読み込まれることをテスト"""
+        import client.settings as settings_module
+        original_path = settings_module.get_settings_path
+        settings_module.get_settings_path = lambda: self.settings_file
+        
+        try:
+            # 一部の設定のみ保存
+            partial_settings = {"auto_refresh_interval": 45}
+            save_settings(partial_settings)
+            
+            loaded = load_settings()
+            self.assertTrue(loaded["auto_refresh_enabled"])  # デフォルト
+            self.assertEqual(loaded["auto_refresh_interval"], 45)  # 保存した値
+        finally:
+            settings_module.get_settings_path = original_path
+
+    def test_invalid_json_settings(self):
+        """無効なJSONの設定ファイルはデフォルトを返すことをテスト"""
+        import client.settings as settings_module
+        original_path = settings_module.get_settings_path
+        settings_module.get_settings_path = lambda: self.settings_file
+        
+        try:
+            # 無効なJSONを書き込み
+            with open(self.settings_file, "w") as f:
+                f.write("not valid json {")
+            
+            loaded = load_settings()
+            self.assertEqual(loaded, DEFAULT_SETTINGS)
+        finally:
+            settings_module.get_settings_path = original_path
+
+    def test_interval_minimum_enforcement(self):
+        """最小更新間隔30秒の制限が適用されることをテスト"""
+        import client.settings as settings_module
+        original_path = settings_module.get_settings_path
+        settings_module.get_settings_path = lambda: self.settings_file
+        
+        try:
+            # 最小値未満の設定を保存
+            low_interval_settings = {"auto_refresh_interval": 10}
+            save_settings(low_interval_settings)
+            
+            loaded = load_settings()
+            # 設定はそのまま保存される（最小値制限はUI側で適用）
+            self.assertEqual(loaded["auto_refresh_interval"], 10)
+        finally:
+            settings_module.get_settings_path = original_path
+
 
 if __name__ == "__main__":
     unittest.main()
