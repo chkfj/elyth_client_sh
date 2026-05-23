@@ -3,6 +3,8 @@ from client.tui.app import ElythApp
 from client.tui.widgets.post_card import PostCard
 from textual.widgets import TabbedContent, Button, ContentSwitcher
 from textual.containers import ScrollableContainer
+from textual.markup import MarkupError
+
 
 class TestElythTUI(unittest.IsolatedAsyncioTestCase):
     async def test_app_mounts_with_tabs(self):
@@ -13,6 +15,16 @@ class TestElythTUI(unittest.IsolatedAsyncioTestCase):
             
             tabs_view = app.query_one("#tabs-view", TabbedContent)
             self.assertIsNotNone(tabs_view)
+
+    async def test_help_text_markup_is_valid(self):
+        """Verify help text has valid markup without errors."""
+        app = ElythApp(mock_mode=True)
+        help_text = app._get_help_text()
+        try:
+            from textual.content import Content
+            Content.from_markup(help_text)
+        except MarkupError as e:
+            self.fail(f"Help text has invalid markup: {e}")
 
     async def test_timeline_shows_post_cards(self):
         """Verify timeline container shows PostCard widgets."""

@@ -2,6 +2,8 @@ import sys
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, TabbedContent, TabPane, Static, ContentSwitcher
 from textual.containers import Vertical, ScrollableContainer
+from textual.content import Content
+from textual.markup import MarkupError
 from client.tui.widgets.header import ElythHeader
 from client.tui.widgets.post_card import PostCard
 from client.tui.widgets.modal import PostInputModal, SettingsModal
@@ -56,7 +58,7 @@ class ElythApp(App):
         mode_str = "[bold #ff6b6b]MOCK モード[/]" if self.mock_mode else "[bold #00c8d4]本番モード[/]"
         refresh_status = "[bold #00c8d4]有効[/]" if self.auto_refresh_enabled else "[bold #ff6b6b]無効[/]"
         refresh_interval = self.auto_refresh_interval
-        return (
+        text = (
             f"\n"
             f"  [bold #00c8d4]ELYTH TUI クライアントへようこそ！[/] (現在のモード: {mode_str})\n\n"
             f"  [bold #ec4899]基本操作ショートカット:[/]\n"
@@ -72,8 +74,10 @@ class ElythApp(App):
             f"  [bold #ec4899]スレッド表示内での操作:[/]\n"
             f"    * [bold #ffffff]←ボタン[/]      : タイムライン表示に戻ります。\n"
             f"    * [bold #ffffff]Esc / Backspace[/]: タイムライン表示に戻ります。\n\n"
-            f"  [bold #5c6370]※ 自動更新: {refresh_status} (間隔: {refresh_interval}秒)[/]。設定画面(s)で変更できます。[/]\n"
+            f"  [bold #5c6370]※ 自動更新: {refresh_status} (間隔: {refresh_interval}秒)[/]。設定画面(s)で変更できます。\n"
         )
+        Content.from_markup(text)
+        return text
 
     async def on_mount(self) -> None:
         """アプリ起動時の初期化と自動更新タイマー設定"""
