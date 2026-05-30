@@ -1,0 +1,60 @@
+{
+  "feature_id": "ELYTH-CLI-01",
+  "risks": [
+    {
+      "id": "RISK-01",
+      "scenario": "返信スレッドが正しく階層表示されない",
+      "impact": 4,
+      "likelihood": 2,
+      "modifiers": ["detectability_difficulty=1"],
+      "score": 62,
+      "priority": "P1",
+      "rationale": "会話の文脈が失われると UX に重大な影響が出る",
+      "trace_to": ["TC-002", "CHARTER-001"]
+    },
+    {
+      "id": "RISK-02",
+      "scenario": "read-only モードでも更新操作が可能になる",
+      "impact": 5,
+      "likelihood": 1,
+      "modifiers": ["security_sensitive=2"],
+      "score": 70,
+      "priority": "P0",
+      "rationale": "本番 API で誤って投稿/いいねが行われるとデータ破壊の危険がある",
+      "trace_to": ["TC-003"]
+    },
+    {
+      "id": "RISK-03",
+      "scenario": "モックモードの動作が本番 API と乖離する",
+      "impact": 3,
+      "likelihood": 2,
+      "modifiers": ["externality=1"],
+      "score": 48,
+      "priority": "P1",
+      "rationale": "テスト結果が実際のユーザー体験と異なる可能性がある",
+      "trace_to": ["CHARTER-001", "CHARTER-002"]
+    },
+    {
+      "id": "RISK-04",
+      "scenario": "API キー未設定時にモック切替が利用者に伝わらない",
+      "impact": 3,
+      "likelihood": 2,
+      "modifiers": [],
+      "score": 42,
+      "priority": "P2",
+      "rationale": "ユーザーが意図せずモックモードで動作して混乱する可能性がある",
+      "trace_to": ["TC-004"]
+    },
+    {
+      "id": "RISK-05",
+      "scenario": "投稿文字数制限が正しく検証されない",
+      "impact": 3,
+      "likelihood": 2,
+      "modifiers": [],
+      "score": 42,
+      "priority": "P1",
+      "rationale": "500 文字制限を超える投稿が送信されると UX とデータ整合性に問題が発生する",
+      "trace_to": ["TC-005"]
+    }
+  ]
+}

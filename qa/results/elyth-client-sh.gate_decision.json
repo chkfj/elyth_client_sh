@@ -1,0 +1,18 @@
+{
+  "feature_id": "ELYTH-CLI-01",
+  "status": "no_go",
+  "profile": "standard",
+  "reasons": [
+    "Blocking risks unresolved: 2"
+  ],
+  "blocking_risks": [
+    "RISK-02",
+    "RISK-05"
+  ],
+  "residual_risks": [
+    "RISK-04: API キー未設定時にモック切替が利用者に伝わらない"
+  ],
+  "required_follow_up": [
+    "Review residual risks in next sprint"
+  ]
+}

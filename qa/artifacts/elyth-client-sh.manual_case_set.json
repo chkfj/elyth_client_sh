@@ -1,0 +1,129 @@
+{
+  "feature_id": "ELYTH-CLI-01",
+  "manual_cases": [
+    {
+      "tc_id": "TC-001",
+      "title": "モックモードでタイムラインを表示できる",
+      "priority": "P0",
+      "primary_view": "black",
+      "techniques": ["happy_path"],
+      "preconditions": ["--mock モードで起動"],
+      "source_ref": {"type": "doc", "refs": ["AC-1", "AC-4"]},
+      "steps": [
+        "ターミナルで ./run.sh --mock を起動する",
+        "タイムライン画面が表示されることを確認する"
+      ],
+      "expected_results": [
+        "タイムライン投稿が表示される",
+        "エラーが発生せず画面が描画される"
+      ],
+      "oracle": {"type": "specified", "refs": ["AC-1"]},
+      "estimate_minutes": 10,
+      "trace_to": ["RISK-01"]
+    },
+    {
+      "tc_id": "TC-002",
+      "title": "返信スレッドを階層付きで表示できる",
+      "priority": "P1",
+      "primary_view": "gray",
+      "techniques": ["structure"],
+      "preconditions": ["投稿に返信が存在するタイムラインデータ"],
+      "source_ref": {"type": "doc", "refs": ["AC-2"]},
+      "steps": [
+        "タイムライン上の投稿を選択する",
+        "View Thread か返信表示を起動する"
+      ],
+      "expected_results": [
+        "返信が元投稿の下にインデント付きで表示される",
+        "返信の返信も階層構造で表示される"
+      ],
+      "oracle": {"type": "specified", "refs": ["AC-2"]},
+      "estimate_minutes": 12,
+      "trace_to": ["RISK-01"]
+    },
+    {
+      "tc_id": "TC-003",
+      "title": "read-only モードでは更新操作が禁止される",
+      "priority": "P0",
+      "primary_view": "black",
+      "techniques": ["security"],
+      "preconditions": ["--read-only オプションで起動"],
+      "source_ref": {"type": "doc", "refs": ["AC-3"]},
+      "steps": [
+        "./run.sh --read-only を起動する",
+        "新規投稿、返信、いいね操作を実行する"
+      ],
+      "expected_results": [
+        "更新操作は拒否され、適切な警告が表示される",
+        "アプリはクラッシュせず継続する"
+      ],
+      "oracle": {"type": "specified", "refs": ["AC-3"]},
+      "estimate_minutes": 15,
+      "trace_to": ["RISK-02"]
+    },
+    {
+      "tc_id": "TC-004",
+      "title": "API キー未設定時にモックモードへ自動切り替えされる",
+      "priority": "P1",
+      "primary_view": "gray",
+      "techniques": ["failure_mode"],
+      "preconditions": [".env に ELYTH_API_KEY が設定されていない"],
+      "source_ref": {"type": "doc", "refs": ["AC-5"]},
+      "steps": [
+        ".env ファイルを削除または API キーを未設定にする",
+        "./run.sh を起動する"
+      ],
+      "expected_results": [
+        "モックモードへの切替メッセージが表示される",
+        "起動後にタイムラインが表示される"
+      ],
+      "oracle": {"type": "specified", "refs": ["AC-5"]},
+      "estimate_minutes": 10,
+      "trace_to": ["RISK-04"]
+    },
+    {
+      "tc_id": "TC-005",
+      "title": "投稿内容の文字数制限が 500 文字以内で検証される",
+      "priority": "P1",
+      "primary_view": "gray",
+      "techniques": ["boundary"],
+      "preconditions": ["投稿作成モーダルを開く"],
+      "source_ref": {"type": "doc", "refs": ["AC-6"]},
+      "steps": [
+        "500 文字を超える投稿を入力する",
+        "送信を試みる"
+      ],
+      "expected_results": [
+        "文字数制限のバリデーションエラーが表示される",
+        "送信は実行されない"
+      ],
+      "oracle": {"type": "specified", "refs": ["AC-6"]},
+      "estimate_minutes": 12,
+      "trace_to": ["RISK-05"]
+    }
+  ],
+  "exploratory_charters": [
+    {
+      "id": "CHARTER-001",
+      "title": "マウス操作とキーボード操作の併用性を探索する",
+      "scope": "タブ切り替え、クリック、スクロール、およびキーボードショートカットの同時併用",
+      "questions": [
+        "マウス操作とキーボード操作は競合せずに連携するか？",
+        "スクロールやフォーカス移動中に描画が破綻しないか？"
+      ],
+      "estimate_minutes": 25,
+      "trace_to": ["RISK-03"]
+    },
+    {
+      "id": "CHARTER-002",
+      "title": "本番 API とモックモードの挙動差分を探索する",
+      "scope": "`--mock` と実 API 接続時の動作差分、エラーメッセージ、制御フロー",
+      "questions": [
+        "モックモードと本番モードで UI 表示に差分はあるか？",
+        "read-only 制御は本番モードでも一貫しているか？"
+      ],
+      "estimate_minutes": 30,
+      "trace_to": ["RISK-03", "RISK-04"]
+    }
+  ]
+}
